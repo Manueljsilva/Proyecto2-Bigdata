@@ -1,0 +1,24 @@
+db.complaints_raw.createIndex({ unique_key: 1 })
+db.complaints_raw.createIndex({ created_date: 1 })
+db.complaints_raw.createIndex({ complaint_type: 1 })
+db.complaints_raw.createIndex({ borough: 1 })
+db.complaints_raw.createIndex({ status: 1 })
+db.complaints_raw.createIndex({ agency: 1 })
+
+ db.complaints_raw.insertOne({
+  unique_key: "TEST001",
+  created_date: "2026-06-24T00:00:00.000",
+  agency: "TEST",
+  complaint_type: "Prueba MongoDB",
+  borough: "QUEENS",
+  status: "Open"
+})
+
+
+db.complaints_raw.findOne({ unique_key: "TEST001" })
+
+db.complaints_raw.updateOne(
+  { unique_key: "TEST001" },
+  { $set: { status: "Closed" } }
+)
+db.complaints_raw.deleteOne({ unique_key: "TEST001" })
