@@ -1,0 +1,15 @@
+# Conectores y Drivers de Bases de Datos
+pymongo>=4.0.0
+cassandra-driver>=3.25.0
+neo4j>=5.0.0
+
+# Procesamiento de Datos y Análisis
+pandas>=1.5.0
+numpy>=1.22.0
+
+# Visualización y Dashboard
+streamlit>=1.20.0
+plotly>=5.10.0
+
+# Desarrollo Local (Opcional, Airflow se corre preferiblemente en Docker)
+# apache-airflow>=2.7.0

@@ -1,0 +1,112 @@
+version: '3.8'
+
+services:
+  # MongoDB: Para guardar el documento crudo/semiestructurado
+  mongodb:
+    image: mongo:6.0
+    container_name: nyc_311_mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Cassandra: Para consultas masivas y agregaciones (KPIs por fecha)
+  cassandra:
+    image: cassandra:latest
+    container_name: nyc_311_cassandra
+    ports:
+      - "9042:9042"
+    environment:
+      - MAX_HEAP_SIZE=512M
+      - HEAP_NEWSIZE=100M
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe cluster' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Neo4j: Para modelar las relaciones (Ciudadano -> Queja -> Distrito -> Agencia)
+  neo4j:
+    image: neo4j:latest
+    container_name: nyc_311_neo4j
+    ports:
+      - "7474:7474" # Consola Web HTTP
+      - "7687:7687" # Puerto Bolt para Python
+    environment:
+      - NEO4J_AUTH=neo4j/password123
+      - NEO4J_dbms_memory_heap_initial__size=512m
+      - NEO4J_dbms_memory_heap_max__size=512m
+      - NEO4J_dbms_memory_pagecache_size=256m
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474/ || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  # Apache Airflow: Ejecución del DAG de ETL
+  airflow-webserver:
+    image: apache/airflow:2.7.1-python3.10
+    container_name: nyc_311_airflow_webserver
+    command: webserver
+    entrypoint: /bin/bash -c "airflow db init && (airflow users create --username admin --firstname admin --lastname admin --role Admin --email admin@example.com --password admin || true) && airflow webserver"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      cassandra:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./data:/opt/airflow/data
+      - airflow_home:/opt/airflow/  # Volumen compartido para airflow.db
+    environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - _PIP_ADDITIONAL_REQUIREMENTS=pymongo cassandra-driver neo4j pandas numpy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # Apache Airflow Scheduler
+  airflow-scheduler:
+    image: apache/airflow:2.7.1-python3.10
+    container_name: nyc_311_airflow_scheduler
+    command: scheduler
+    depends_on:
+      airflow-webserver:
+        condition: service_healthy  # Espera a que el webserver (y db init) estén listos
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./data:/opt/airflow/data
+      - airflow_home:/opt/airflow/  # Mismo volumen: comparte airflow.db con el webserver
+    environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - _PIP_ADDITIONAL_REQUIREMENTS=pymongo cassandra-driver neo4j pandas numpy
+
+volumes:
+  mongo_data:
+  cassandra_data:
+  neo4j_data:
+  airflow_home:  # Volumen compartido entre webserver y scheduler
