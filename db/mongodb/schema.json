@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "NYC_311_Complaint",
+  "type": "object",
+  "properties": {
+    "unique_key": {
+      "type": "string",
+      "description": "Unique identifier of the complaint/service request"
+    },
+    "created_date": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Timestamp when the complaint was created (ISO 8601)"
+    },
+    "closed_date": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Timestamp when the complaint was closed (ISO 8601, null if open)"
+    },
+    "agency": {
+      "type": "string",
+      "description": "Acronym of the agency handled the complaint (e.g., NYPD, DOT)"
+    },
+    "agency_name": {
+      "type": "string",
+      "description": "Full name of the agency"
+    },
+    "complaint_type": {
+      "type": "string",
+      "description": "Category of the complaint (e.g., Noise - Residential)"
+    },
+    "descriptor": {
+      "type": "string",
+      "description": "Detailed description of the complaint (e.g., Loud Music/Party)"
+    },
+    "status": {
+      "type": "string",
+      "description": "Current status of the complaint (e.g., Open, Closed, Assigned)"
+    },
+    "incident_zip": {
+      "type": "string",
+      "description": "Zip code of the incident location"
+    },
+    "incident_address": {
+      "type": "string",
+      "description": "Address of the incident location"
+    },
+    "city": {
+      "type": "string",
+      "description": "City name of the incident, standardized in UPPERCASE"
+    },
+    "borough": {
+      "type": "string",
+      "description": "Borough name, standardized in UPPERCASE"
+    },
+    "latitude": {
+      "type": ["number", "null"],
+      "description": "Latitude coordinate of the incident"
+    },
+    "longitude": {
+      "type": ["number", "null"],
+      "description": "Longitude coordinate of the incident"
+    },
+    "open_data_channel_type": {
+      "type": "string",
+      "description": "Channel through which the complaint was reported (e.g., ONLINE, PHONE)"
+    }
+  },
+  "required": [
+    "unique_key",
+    "created_date",
+    "agency",
+    "complaint_type",
+    "status",
+    "borough"
+  ]
+}
